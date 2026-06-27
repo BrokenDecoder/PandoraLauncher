@@ -1997,8 +1997,8 @@ impl BackendState {
             return;
         };
 
-        let prelaunch_result = tokio::select! {
-            result = self.prelaunch(id, &modal_action) => result,
+        tokio::select! {
+            _ = self.prelaunch(id, &modal_action) => {},
             _ = modal_action.request_cancel.cancelled() => {
                 self.send.send(MessageToFrontend::CloseModal);
                 return;
@@ -2006,12 +2006,6 @@ impl BackendState {
         };
 
         if modal_action.error.read().is_some() {
-            self.send.send(MessageToFrontend::Refresh);
-            return;
-        }
-        if let Err(err) = prelaunch_result {
-            modal_action.set_error_message(format!("Unable to run prelaunch: {}", err).into());
-            log::error!("Unable to run prelaunch: {err:?}");
             self.send.send(MessageToFrontend::Refresh);
             return;
         }
