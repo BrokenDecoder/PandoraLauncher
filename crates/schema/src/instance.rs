@@ -72,39 +72,30 @@ impl InstanceConfiguration {
     }
 
     pub fn determine_neoforge_loader_version(&self, manifest: &NeoforgeMavenManifest) -> Option<Ustr> {
-        self.determine_forgelike_loader_version(true, &manifest.0)
-    }
-
-    pub fn determine_forge_loader_version(&self, manifest: &ForgeMavenManifest) -> Option<Ustr> {
-        self.determine_forgelike_loader_version(false, &manifest.0)
-    }
-
-    fn determine_forgelike_loader_version(&self, neoforge: bool, loader_versions: &[Ustr]) -> Option<Ustr> {
         if let Some(preferred_loader_version) = self.preferred_loader_version {
             return Some(preferred_loader_version);
         }
 
         let mut minecraft_version_parts = VersionFragment::string_to_parts(self.minecraft_version.as_str());
-        if neoforge {
-            // 1.21.5 -> 21.5
-            // 25w14craftmine -> 0.25w14craftmine
-            // 1.21 -> 21.0
-            // 26.1 -> 26.1.0
-            if minecraft_version_parts[0] == VersionFragment::String("25w14craftmine".into()) {
-                minecraft_version_parts.insert(0, VersionFragment::Number(0))
-            } else {
-                if minecraft_version_parts.len() < 3 {
-                    minecraft_version_parts.push(VersionFragment::Number(0))
-                }
-                if minecraft_version_parts[0] == VersionFragment::Number(1) {
-                    minecraft_version_parts.remove(0);
-                }
+
+        // 1.21.5 -> 21.5
+        // 25w14craftmine -> 0.25w14craftmine
+        // 1.21 -> 21.0
+        // 26.1 -> 26.1.0
+        if minecraft_version_parts[0] == VersionFragment::String("25w14craftmine".into()) {
+            minecraft_version_parts.insert(0, VersionFragment::Number(0))
+        } else {
+            if minecraft_version_parts.len() < 3 {
+                minecraft_version_parts.push(VersionFragment::Number(0))
+            }
+            if minecraft_version_parts[0] == VersionFragment::Number(1) {
+                minecraft_version_parts.remove(0);
             }
         }
 
         let mut latest_loader_version = None;
         let mut latest_loader_version_parts = Vec::new();
-        for version in loader_versions.iter() {
+        for version in manifest.0.iter() {
             let parts = VersionFragment::string_to_parts(version);
 
             if parts.starts_with(&minecraft_version_parts) {
@@ -112,6 +103,32 @@ impl InstanceConfiguration {
                     latest_loader_version_parts = parts;
                     latest_loader_version = Some(version.clone());
                 }
+            }
+        }
+
+        latest_loader_version
+    }
+
+    pub fn determine_forge_loader_version(&self, manifest: &ForgeMavenManifest) -> Option<Ustr> {
+        if let Some(preferred_loader_version) = self.preferred_loader_version {
+            return Some(preferred_loader_version);
+        }
+
+        let mut latest_loader_version = None;
+        let mut latest_loader_version_parts = Vec::new();
+
+        for loader_version in &manifest.0 {
+            let Some((loader_minecraft_version, _)) = loader_version.split_once('-') else {
+                continue;
+            };
+            if loader_minecraft_version != self.minecraft_version {
+                continue;
+            }
+
+            let parts = VersionFragment::string_to_parts(loader_version);
+            if parts > latest_loader_version_parts {
+                latest_loader_version_parts = parts;
+                latest_loader_version = Some(loader_version.clone());
             }
         }
 
