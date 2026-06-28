@@ -403,7 +403,10 @@ impl Render for LauncherUI {
             }
         }
 
-        let page_type = InterfaceConfig::get(cx).main_page.clone();
+        let (page_type, hide_skins) = {
+            let config = InterfaceConfig::get(cx);
+            (config.main_page.clone(), config.hide_skins)
+        };
 
         let library_group = MenuGroup::new("Minecraft")
             .child(MenuGroupItem::new(t::instance::title())
@@ -411,11 +414,11 @@ impl Render for LauncherUI {
                 .on_click(cx.listener(|launcher, _, window, cx| {
                     launcher.switch_page(PageType::Instances, &[], window, cx);
                 })))
-            .child(MenuGroupItem::new(t::skins::title())
+            .when(!hide_skins, |this| this.child(MenuGroupItem::new(t::skins::title())
                 .active(page_type == PageType::Skins)
                 .on_click(cx.listener(|launcher, _, window, cx| {
                     launcher.switch_page(PageType::Skins, &[], window, cx);
-                })));
+                }))));
 
         let content_group = MenuGroup::new(t::instance::content::title())
             .child(MenuGroupItem::new(t::modrinth::name())
