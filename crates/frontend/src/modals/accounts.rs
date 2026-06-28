@@ -1,6 +1,6 @@
-use std::sync::atomic::{AtomicIsize, Ordering};
+use std::sync::{Arc, atomic::{AtomicIsize, Ordering}};
 
-use bridge::{handle::BackendHandle, message::MessageToBackend};
+use bridge::{account::Account, handle::BackendHandle, message::MessageToBackend};
 use gpui::{prelude::FluentBuilder, *};
 use gpui_component::{
     ActiveTheme, Disableable, WindowExt, button::{Button, ButtonVariants}, h_flex, input::{Input, InputState}, sheet::Sheet, v_flex,
@@ -73,6 +73,7 @@ struct Accounts {
     accounts: Entity<AccountEntries>,
     animate_move: Option<AnimateMove>,
     shift_amounts: Vec<f32>,
+    last_accounts: Arc<[Account]>
 }
 
 pub fn build_accounts_sheet(data: &DataEntities, _: &mut Window, cx: &mut App) -> impl Fn(Sheet, &mut Window, &mut App) -> Sheet + 'static {
@@ -82,12 +83,13 @@ pub fn build_accounts_sheet(data: &DataEntities, _: &mut Window, cx: &mut App) -
             accounts: data.accounts.clone(),
             animate_move: None,
             shift_amounts: Vec::new(),
+            last_accounts: Arc::new([]),
         };
 
         accounts
     });
 
-    move |sheet, _, cx| {
+    move |sheet, _, _| {
         sheet
             .title(t::account::title())
             .size(px(420.))
@@ -108,9 +110,19 @@ impl Render for Accounts {
         let accounts_len = accounts.len();
 
         let start_y = window.mouse_position().y.as_f32();
-        if !cx.has_active_drag() {
-            self.animate_move = None;
+
+        if let Some(animate_move) = &self.animate_move {
+            let reset = if animate_move.from != animate_move.to {
+                !Arc::ptr_eq(&accounts, &self.last_accounts)
+            } else {
+                !cx.has_active_drag()
+            };
+            if reset {
+                self.shift_amounts.clear();
+                self.animate_move = None;
+            }
         }
+        self.last_accounts = accounts.clone();
 
         let items = accounts.iter().enumerate().filter_map(|(account_index, account)| {
             let head = if hide_skins {
