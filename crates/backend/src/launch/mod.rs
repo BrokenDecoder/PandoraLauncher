@@ -589,6 +589,26 @@ impl Launcher {
         };
         let version: PartialMinecraftVersion = serde_json::from_slice(&version_file.bytes()?)?;
 
+        // Extract files in maven/ into libraries, used in 1.16 and below
+        for entry in installer_zip.entries() {
+            if let Some(path) = entry.name.strip_prefix("maven/") {
+                let Some(safe) = SafePath::new(path) else {
+                    continue;
+                };
+                let Ok(bytes) = entry.bytes() else {
+                    continue;
+                };
+
+                let path_in_library = safe.to_path(&self.directories.libraries_dir);
+
+                if let Some(parent) = path_in_library.parent() {
+                    _ = std::fs::create_dir_all(parent);
+                }
+
+                _ = crate::write_safe(&path_in_library, &bytes);
+            }
+        }
+
         // Download mirror list
         let mirror = if check_mirrors && let Some(mirror_list) = &install_profile.mirror_list {
             Self::download_random_mirror(http_client, mirror_list).await
@@ -2202,7 +2222,7 @@ impl LaunchContext {
         command.arg("-Dsun.stderr.encoding=UTF-8");
 
         // This is only needed for 1.18.2 and below, but lets just add it for all versions
-        if self.configuration.loader == Loader::Forge {
+        if self.configuration.loader == Loader::Forge && version_info.java_version.as_ref().map_or(0, |v| v.major_version) > 8 {
             command.arg("--add-exports");
             command.arg("cpw.mods.bootstraplauncher/cpw.mods.bootstraplauncher=ALL-UNNAMED");
         }
