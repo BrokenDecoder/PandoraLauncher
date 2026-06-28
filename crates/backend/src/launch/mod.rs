@@ -56,7 +56,7 @@ pub enum LaunchError {
     MissingFileInZipError(Cow<'static, str>),
     #[error("Failed to find version: {0}")]
     CantFindVersion(&'static str),
-    #[error("Can't find {loader:?} version for minecraft {minecraft}")]
+    #[error("Can't find {loader:?} version for Minecraft {minecraft}")]
     CantFindLoader {
         loader: Loader,
         minecraft: &'static str
@@ -425,7 +425,7 @@ impl Launcher {
 
                 let Some(loader_version) = instance_info.determine_forge_loader_version(&manifest) else {
                     return Err(LaunchError::CantFindLoader {
-                        loader: Loader::NeoForge,
+                        loader: Loader::Forge,
                         minecraft: instance_info.minecraft_version.as_str()
                     });
                 };
@@ -2131,7 +2131,6 @@ impl LaunchContext {
         if !java_path_parent_parent.join("lib").is_dir() {
             return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "java root folder must contain 'lib'"));
         }
-
 
         wrapping_command.push(self.java_path.clone().into_os_string().into());
 
