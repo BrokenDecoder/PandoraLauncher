@@ -861,6 +861,8 @@ ru = "Логи Minecraft"
 [system.report_bug]
 en = "Report a bug"
 ru = "Сообщить об ошибке"
+[system.join_discord]
+en = "Join the Discord server"
 
 [system.update.available]
 en = "Update Available"

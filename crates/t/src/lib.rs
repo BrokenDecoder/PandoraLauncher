@@ -4964,6 +4964,7 @@ pub mod system {
         match key {
             "backend_shutdown" => Some(backend_shutdown()),
             "game_output" => Some(game_output()),
+            "join_discord" => Some(join_discord()),
             "metadata_error" => Some(metadata_error()),
             "report_bug" => Some(report_bug()),
             _ => None,
@@ -4985,6 +4986,11 @@ pub mod system {
             3 => "Логи Minecraft",
             4 => "Minecraft Log utmatning",
             _ => "Minecraft Game Output",
+        }
+    }
+    pub fn join_discord() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            _ => "Join the Discord server",
         }
     }
     pub fn metadata_error() -> &'static str {

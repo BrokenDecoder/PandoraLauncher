@@ -550,6 +550,24 @@ impl Render for LauncherUI {
                     open_bug_report_url(window, cx);
                 }
             });
+        let discord_invite = option_env!("DISCORD_INVITE").unwrap_or("https://pandora.moulberry.com/discord");
+        let discord_button = div()
+            .id("discord-button")
+            .p_2()
+            .rounded(cx.theme().radius)
+            .hover(|this| {
+                this.bg(cx.theme().sidebar_accent)
+                    .text_color(cx.theme().sidebar_accent_foreground)
+            })
+            .child(PandoraIcon::Discord)
+            .tooltip(move |window, cx| {
+                Tooltip::new(t::system::join_discord()).build(window, cx)
+            })
+            .on_click({
+                move |_, _, cx| {
+                    cx.open_url(discord_invite);
+                }
+            });
 
         let header = h_flex()
             .when_else(cfg!(target_os = "macos"), |this| this.pt(px(9.0)), |this| this.pt(px(14.0)))
@@ -561,7 +579,10 @@ impl Render for LauncherUI {
             .text_size(rems(0.9375))
             .child(Icon::new(PandoraIcon::Pandora).size_8().min_w_8().min_h_8())
             .child(t::common::app_name());
-        let footer_buttons = h_flex().child(settings_button).child(bug_report_button);
+        let footer_buttons = h_flex()
+            .child(settings_button)
+            .child(bug_report_button)
+            .when(!discord_invite.is_empty(), |this| this.child(discord_button));
         let footer = v_flex().pb_2().px_2().items_center().min_w_full().max_w_full().w_full().child(footer_buttons).child(account_button);
         let sidebar = v_flex()
             .size_full()
