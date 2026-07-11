@@ -253,7 +253,7 @@ impl Render for PlayerModelWidget {
                         }))))
                 .child(v_flex()
                     .child(h_flex().w_full().justify_between().text_sm()
-                        .child(format!("Yaw: {}°", yaw as i32))
+                        .child(t::skins::player_model::yaw(yaw as i32))
                         .child(Button::new("play-yaw").compact().small()
                             .icon(PandoraIcon::pause_play(self.animating_yaw))
                             .on_click(cx.listener(|widget, _, _, cx| {
@@ -264,7 +264,7 @@ impl Render for PlayerModelWidget {
                     .child(Slider::new(&self.yaw_slider_state)))
                 .child(v_flex()
                     .child(h_flex().w_full().justify_between().text_sm()
-                        .child(format!("Pitch: {}°", pitch as i32))
+                        .child(t::skins::player_model::pitch(pitch as i32))
                         .child(Button::new("play-pitch").compact().small()
                             .icon(PandoraIcon::pause_play(self.animating_pitch))
                             .on_click(cx.listener(|widget, _, _, cx| {
@@ -275,7 +275,7 @@ impl Render for PlayerModelWidget {
                     .child(Slider::new(&self.pitch_slider_state)))
                 .child(v_flex()
                     .child(h_flex().w_full().justify_between().text_sm()
-                        .child("Animation")
+                        .child(t::skins::player_model::animation())
                         .child(Button::new("play-anim").compact().small()
                             .icon(PandoraIcon::pause_play(self.animating_animation))
                             .on_click(cx.listener(|widget, _, _, cx| {

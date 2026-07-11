@@ -260,7 +260,7 @@ impl ModrinthSearchPage {
                 ModrinthProjectType::Modpack => t::instance::content::search::modpack(),
                 ModrinthProjectType::Resourcepack => t::instance::content::search::resourcepack(),
                 ModrinthProjectType::Shader => t::instance::content::search::shader(),
-                ModrinthProjectType::Other => t::instance::content::search::file(),
+                ModrinthProjectType::Other => t::common::search(),
             };
             state.set_placeholder(placeholder, window, cx)
         });
@@ -714,12 +714,12 @@ impl PrimaryAction {
             },
             PrimaryAction::InstallLatest => {
                 let Some(install_for) = install_for else {
-                    window.push_notification((NotificationType::Error, "Unable to find instance"), cx);
+                    window.push_notification((NotificationType::Error, t::instance::unable_to_find()), cx);
                     return;
                 };
 
                 let Some(entry) = data.instances.read(cx).entries.get(&install_for) else {
-                    window.push_notification((NotificationType::Error, "Unable to find instance"), cx);
+                    window.push_notification((NotificationType::Error, t::instance::unable_to_find()), cx);
                     return;
                 };
 
