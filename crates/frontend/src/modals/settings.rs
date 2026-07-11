@@ -148,7 +148,7 @@ pub fn build_settings_sheet(data: &DataEntities, window: &mut Window, cx: &mut A
     move |sheet, _, cx| {
         sheet
             .title(t::settings::title())
-            .size(px(500.))
+            .size(px(420.))
             .p_0()
             .when(cfg!(target_os = "macos"), |this| this.pt_5())
             .child(v_flex()
