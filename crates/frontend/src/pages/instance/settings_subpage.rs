@@ -36,6 +36,7 @@ pub struct InstanceSettingsSubpage {
     loader_select_state: Entity<SelectState<Vec<&'static str>>>,
     loader_versions_state: TypelessFrontendMetadataResult,
     loader_version_select_state: Entity<SelectState<SearchableVec<&'static str>>>,
+    loader_version_latest_string: &'static str,
     disable_file_syncing: bool,
     sandbox_available: bool,
     sandbox: bool,
@@ -88,7 +89,8 @@ impl InstanceSettingsSubpage {
         let instance_id = entry.id;
         let instance_name = entry.name.clone();
         let loader = entry.configuration.loader;
-        let preferred_loader_version = entry.configuration.preferred_loader_version.map(|s| s.as_str()).unwrap_or(t::common::latest());
+        let loader_version_latest_string = t::common::latest();
+        let preferred_loader_version = entry.configuration.preferred_loader_version.map(|s| s.as_str()).unwrap_or(loader_version_latest_string);
         let account = entry.configuration.preferred_account;
         let disable_file_syncing = entry.configuration.disable_file_syncing;
         let sandbox = entry.configuration.sandbox;
@@ -177,7 +179,7 @@ impl InstanceSettingsSubpage {
                 None
             };
             if page.loader_version_select_state.read(cx).selected_index(cx).is_none() {
-                let version = entry.configuration.preferred_loader_version.map(|s| s.as_str()).unwrap_or(t::common::latest());
+                let version = entry.configuration.preferred_loader_version.map(|s| s.as_str()).unwrap_or(loader_version_latest_string);
                 page.loader_version_select_state.update(cx, |select_state, cx| {
                     select_state.set_selected_value(&version, window, cx);
                 });
@@ -223,6 +225,7 @@ impl InstanceSettingsSubpage {
             loader,
             loader_select_state,
             loader_version_select_state,
+            loader_version_latest_string,
             disable_file_syncing,
             sandbox_available,
             sandbox,
@@ -317,6 +320,7 @@ impl InstanceSettingsSubpage {
     }
 
     fn update_loader_versions(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let latest_str = self.loader_version_latest_string;
         let loader_versions = match self.loader {
             Loader::Vanilla => {
                 self._observe_loader_version_subscription = None;
@@ -324,28 +328,30 @@ impl InstanceSettingsSubpage {
                 vec![""]
             },
             Loader::Fabric => {
-                self.update_loader_versions_for_loader(MetadataRequest::FabricLoaderManifest, |manifest: &FabricLoaderManifest| {
-                    std::iter::once(t::common::latest())
+                self.update_loader_versions_for_loader(MetadataRequest::FabricLoaderManifest, move |manifest: &FabricLoaderManifest| {
+                    std::iter::once(latest_str)
                         .chain(manifest.0.iter().map(|s| s.version.as_str()))
                         .collect()
                 }, window, cx)
             },
             Loader::Forge => {
-                self.update_loader_versions_for_loader(MetadataRequest::ForgeMavenManifest, |manifest: &ForgeMavenManifest| {
-                    std::iter::once(t::common::latest())
+                self.update_loader_versions_for_loader(MetadataRequest::ForgeMavenManifest, move |manifest: &ForgeMavenManifest| {
+                    std::iter::once(latest_str)
                         .chain(manifest.0.iter().map(|s| s.as_str()))
                         .collect()
                 }, window, cx)
             },
             Loader::NeoForge => {
-                self.update_loader_versions_for_loader(MetadataRequest::NeoforgeMavenManifest, |manifest: &NeoforgeMavenManifest| {
-                    std::iter::once(t::common::latest())
+                self.update_loader_versions_for_loader(MetadataRequest::NeoforgeMavenManifest, move |manifest: &NeoforgeMavenManifest| {
+                    std::iter::once(latest_str)
                         .chain(manifest.0.iter().map(|s| s.as_str()))
                         .collect()
                 }, window, cx)
             },
         };
-        let preferred_loader_version = self.instance.read(cx).configuration.preferred_loader_version.map(|s| s.as_str()).unwrap_or(t::common::latest());
+        let preferred_loader_version = self.instance.read(cx).configuration.preferred_loader_version
+            .map(|s| s.as_str())
+            .unwrap_or(latest_str);
         self.loader_version_select_state.update(cx, move |select_state, cx| {
             select_state.set_items(SearchableVec::new(loader_versions), window, cx);
             select_state.set_selected_value(&preferred_loader_version, window, cx);
@@ -370,6 +376,7 @@ impl InstanceSettingsSubpage {
             FrontendMetadataResult::Loaded(manifest) => (items_fn)(&manifest),
             FrontendMetadataResult::Error(_) => vec![],
         };
+        let latest_str = self.loader_version_latest_string;
         self.loader_versions_state = result.as_typeless();
         self._observe_loader_version_subscription = Some(cx.observe_in(&request, window, move |page, metadata, window, cx| {
             let result: FrontendMetadataResult<T> = metadata.read(cx).result();
@@ -379,7 +386,9 @@ impl InstanceSettingsSubpage {
                 vec![]
             };
             page.loader_versions_state = result.as_typeless();
-            let preferred_loader_version = page.instance.read(cx).configuration.preferred_loader_version.map(|s| s.as_str()).unwrap_or(t::common::latest());
+            let preferred_loader_version = page.instance.read(cx).configuration.preferred_loader_version
+                .map(|s| s.as_str())
+                .unwrap_or(latest_str);
             page.loader_version_select_state.update(cx, move |select_state, cx| {
                 select_state.set_items(SearchableVec::new(versions), window, cx);
                 select_state.set_selected_value(&preferred_loader_version, window, cx);
@@ -497,7 +506,7 @@ impl InstanceSettingsSubpage {
     ) {
         let SelectEvent::Confirm(value) = event;
 
-        let value = if value == &Some(t::common::latest()) {
+        let value = if value == &Some(self.loader_version_latest_string) {
             None
         } else {
             value.clone()
