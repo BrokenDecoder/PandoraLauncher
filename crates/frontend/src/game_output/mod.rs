@@ -1155,7 +1155,7 @@ impl Render for GameOutputRoot {
                 state.scrolling = GameOutputScrolling::Top { offset: Pixels::ZERO };
                 cx.notify();
             })))
-            .child(Button::new("upload").label("Upload Logs").on_click(cx.listener(|root, _, window, cx| {
+            .child(Button::new("upload").label(t::instance::logs::upload::label()).on_click(cx.listener(|root, _, window, cx| {
                 root.upload_logs(window, cx);
             })))
             .child(Button::new("bottom").label(t::common::nav::bottom()).on_click(cx.listener(|root, _, _, cx| {
